@@ -61,11 +61,13 @@
         ids-query (clojure.string/join "," urls)
         result (try-try-again {:sleep 5000 :tries 10} 
                 #(deref (http/get facebook-endpoint {:as :text :query-params {"ids" ids-query "access_token" @api-token}})))
-        body (json/read-str (:body result))
         now (clj-time/now)
         subj-url (str "https://facebook.com/" (f/unparse facebook-url-date-formatter now))
-        events (extract-events body url-dois subj-url (str now))
-        evidence-log {:input-headers (:headers result)
+        ; If there's no body, report that. Status code will also be returned.
+        body (when (:body result) (json/read-str (:body result)))
+        events (when body (extract-events body url-dois subj-url (str now)))
+        evidence-log {:input-status (:status result)
+                      :input-headers (:headers result)
                       :input-body (:body result)
                       :events events}]
         
