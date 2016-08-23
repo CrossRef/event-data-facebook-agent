@@ -69,11 +69,17 @@
         now (clj-time/now)
         subj-url (str "https://facebook.com/" (f/unparse facebook-url-date-formatter now))
         ; If there's no body, report that. Status code will also be returned.
-        body (when (:body result) (json/read-str (:body result)))
-        events (when body (extract-events body url-dois subj-url (str now)))
-        evidence-log {:input-status (:status result)
+        status (:status result)
+        body (:body result)
+        ok (and body (= status 200))
+        ; Sometimes non-JSON is sent. If we can't parse return nil. We still record the status and input body.
+        parsed-body (when ok (try
+                        (json/read-str body)
+                        (catch Exception e nil)))
+        events (when body (extract-events parsed-body url-dois subj-url (str now)))
+        evidence-log {:input-status status
                       :input-headers (:headers result)
-                      :input-body (:body result)
+                      :input-body body
                       :events events}]
     evidence-log))
 
