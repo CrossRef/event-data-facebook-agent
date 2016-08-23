@@ -30,7 +30,11 @@
   [facebook-result url-doi-mapping subj-url time-str]
   (mapcat (fn [[url value]]
             (let [doi (url-doi-mapping url)]
-              [{:uuid (new-uuid)
+              ; DOI should be found. But if FB gives us something back that we didn't recognise we can't.
+              (when (not doi)
+                (l/error "Couldn't reverse" url))
+              (when doi
+                [{:uuid (new-uuid)
                 :source_token @source-token
                 :subj_id subj-url
                 :subj {:pid subj-url :URL "https://facebook.com" :title (str "Facebook activity at " time-str) :type "webpage" :issued time-str}
@@ -48,7 +52,7 @@
                 :relation_type_id "bookmarks"
                 :source_id "facebook"
                 :occurred_at time-str
-                :total (get-in value ["share" "share_count"] 0)}])) facebook-result))
+                :total (get-in value ["share" "share_count"] 0)}])) facebook-result)))
 
 (def facebook-url-date-formatter (f/formatter "yyyy/MM"))
 
